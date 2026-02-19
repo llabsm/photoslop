@@ -3,7 +3,7 @@ import * as fabric from 'fabric';
 import Toolbar from './components/toolbar/Toolbar';
 import MenuBar from './components/menus/MenuBar';
 import PanelDock from './components/panels/PanelDock';
-import EditorCanvas from './components/canvas/EditorCanvas';
+import CanvasToolHandler from './components/canvas/CanvasToolHandler';
 import OptionsBar from './components/canvas/OptionsBar';
 import StatusBar from './components/canvas/StatusBar';
 import NewDocumentDialog from './components/dialogs/NewDocumentDialog';
@@ -246,7 +246,7 @@ export default function App() {
       <MenuBar />
       <OptionsBar />
       <Toolbar />
-      <EditorCanvas />
+      <CanvasToolHandler />
       <PanelDock />
       <StatusBar />
 

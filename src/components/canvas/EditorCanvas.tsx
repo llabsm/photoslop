@@ -203,7 +203,7 @@ export default function EditorCanvas() {
     const onMouseUp = () => {
       isPanningRef.current = false;
       lastPanPointRef.current = null;
-      if (activeTool !== 'hand') {
+      if (activeTool === 'move') {
         fabricCanvas.selection = true;
       }
     };
