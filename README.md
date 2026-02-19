@@ -1,73 +1,109 @@
-# React + TypeScript + Vite
+# Photoslop
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A professional-grade, browser-based image editor built entirely by AI.
 
-Currently, two official plugins are available:
+**Model:** Anthropic Claude Opus 4.6
+**Stack:** React + TypeScript + Vite + Fabric.js v6
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+---
 
-## React Compiler
+## The Prompt
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> Build a professional-grade, browser-based image editing web application with the following complete feature set:
+>
+> **Core Architecture**
+>
+> - Canvas-based rendering engine (use Fabric.js or Konva.js, or raw HTML5 Canvas)
+> - Non-destructive editing via a layer system with blend modes, opacity, and visibility toggles
+> - Full undo/redo history stack (at least 50 steps)
+> - Support for opening and exporting PNG, JPEG, WebP, and SVG files
+>
+> **Tonal & Color Adjustments**
+>
+> - Exposure, brightness, contrast, highlights, and shadows sliders
+> - White balance / color temperature and tint
+> - Hue, saturation, luminance (HSL) controls per color channel
+> - Vibrance and clarity
+> - Curves editor (RGB and per-channel)
+> - Levels histogram with black/white/midpoint input
+> - Color grading panel (shadows, midtones, highlights wheels)
+>
+> **Retouching & Healing Tools**
+>
+> - Clone stamp tool
+> - Healing brush (blend surrounding pixels)
+> - Spot removal tool
+> - Liquify tool (push, pull, warp, bloat, pucker)
+>
+> **Selection & Masking**
+>
+> - Rectangular and elliptical marquee selection
+> - Lasso and polygonal lasso
+> - Magic wand (tolerance-based fill selection)
+> - Quick mask mode
+> - Layer masking (paint to reveal/hide)
+> - Feathering and edge refinement on selections
+>
+> **Compositing & Layers**
+>
+> - Layer panel with drag-to-reorder, grouping, and locking
+> - Full set of blend modes: Normal, Multiply, Screen, Overlay, Soft Light, Hard Light, Difference, Color, Luminosity, etc.
+> - Smart object support (embed and transform without quality loss)
+> - Adjustment layers (non-destructive, affect layers below)
+> - Clipping masks
+>
+> **Filters & Effects**
+>
+> - Gaussian, motion, and radial blur
+> - Sharpen and unsharp mask
+> - Noise reduction and grain
+> - Lens distortion correction (barrel, pincushion)
+> - Vignette
+> - Artistic filters (pixelate, posterize, emboss)
+>
+> **Text & Vector Tools**
+>
+> - Text tool with full typography controls (font, size, tracking, leading, kerning, color)
+> - Vector pen tool for custom paths
+> - Basic shape tools (rectangle, ellipse, polygon, line)
+> - Path editing and stroke/fill controls
+>
+> **Transform Tools**
+>
+> - Free transform (scale, rotate, skew, distort, perspective)
+> - Crop tool with ratio presets and straighten
+> - Flip horizontal/vertical
+> - Canvas resize and image resize (with interpolation options)
+>
+> **Painting & Drawing**
+>
+> - Brush tool with size, hardness, opacity, and flow controls
+> - Brush presets and custom brush shapes
+> - Eraser tool (hard and soft)
+> - Gradient tool (linear, radial, angle, reflected)
+> - Paint bucket / fill tool
+> - Color picker with hex, RGB, and HSL input
+> - Eyedropper tool
+>
+> **UI & UX**
+>
+> - Dark-themed, panel-based layout similar to professional creative software
+> - Collapsible left toolbar, right panel dock (layers, adjustments, history, properties)
+> - Top menu bar with File, Edit, Image, Layer, Filter, View menus
+> - Zoom and pan with mousewheel and hand tool
+> - Rulers and guides
+> - Responsive to large desktop screens
+>
+> **Export & Output**
+>
+> - Export as PNG, JPEG (with quality slider), WebP
+> - Flatten to single layer for export
+> - Copy merged to clipboard
+>
+> Use vanilla JS with HTML5 Canvas, or React with a canvas library — whichever produces the cleanest architecture. Prioritize performance for large images. Structure the codebase modularly so each tool and panel is its own component or module.
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## About
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+This project is part of [LLabsM](https://github.com/llabsm) — a collection of applications built entirely by AI to demonstrate what's possible with modern language models. Every line of code in this repository was generated by Claude Opus 4.6 in a single session.
