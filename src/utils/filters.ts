@@ -135,7 +135,7 @@ export function createPixelate(blockSize: number): fabric.filters.Pixelate {
  * it via a custom BaseFilter subclass using Canvas2D.
  * @param levels number of colour levels per channel (2-256, default 4)
  */
-export function createPosterize(levels = 4): fabric.BaseFilter {
+export function createPosterize(levels = 4): fabric.filters.BaseFilter<string, Record<string, any>> {
   const clamped = Math.max(2, Math.min(256, Math.round(levels)));
 
   return new PosterizeFilter({ levels: clamped });
@@ -158,7 +158,7 @@ export function createInvert(): fabric.filters.Invert {
 /**
  * Sepia tone.
  */
-export function createSepia(): fabric.filters.Sepia {
+export function createSepia(): InstanceType<typeof fabric.filters.Sepia> {
   return new fabric.filters.Sepia();
 }
 
@@ -187,7 +187,7 @@ export function createEdgeDetect(): fabric.filters.Convolute {
 /**
  * Custom Canvas2D posterize filter for Fabric.js v6.
  */
-class PosterizeFilter extends fabric.filters.BaseFilter {
+class PosterizeFilter extends fabric.filters.BaseFilter<'Posterize', { levels: number }> {
   declare levels: number;
 
   static type = 'Posterize';

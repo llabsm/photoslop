@@ -111,7 +111,7 @@ export function useKeyboardShortcuts() {
       if (key === 'delete' || key === 'backspace') {
         if (!ctrl && store.fabricCanvas) {
           const active = store.fabricCanvas.getActiveObject();
-          if (active && active.name !== 'background') {
+          if (active && !(active as any)._isDocBackground) {
             store.fabricCanvas.remove(active);
             store.fabricCanvas.renderAll();
           }

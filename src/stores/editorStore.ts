@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuid } from 'uuid';
-import type { Layer, Tool, BlendMode, BrushSettings, HistoryEntry, Selection, DocumentInfo, ColorAdjustments } from '../types';
+import type { Canvas as FabricCanvas } from 'fabric';
+import type { Layer, Tool, BrushSettings, HistoryEntry, Selection, DocumentInfo, ColorAdjustments } from '../types';
 
 interface EditorState {
   // Document
@@ -66,8 +67,8 @@ interface EditorState {
   toggleSnap: () => void;
 
   // Canvas reference
-  fabricCanvas: fabric.Canvas | null;
-  setFabricCanvas: (canvas: fabric.Canvas | null) => void;
+  fabricCanvas: FabricCanvas | null;
+  setFabricCanvas: (canvas: FabricCanvas | null) => void;
 }
 
 const defaultAdjustments: ColorAdjustments = {

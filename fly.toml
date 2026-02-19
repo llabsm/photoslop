@@ -1,3 +1,8 @@
+# fly.toml app configuration file generated for photoslop on 2026-02-19T15:52:50-06:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
 app = 'photoslop'
 primary_region = 'dfw'
 
@@ -14,3 +19,4 @@ primary_region = 'dfw'
   memory = '256mb'
   cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 256

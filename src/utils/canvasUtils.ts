@@ -67,7 +67,7 @@ export function applyFilter(
   // Replace an existing filter of the same type if found
   const existing = active.filters ?? [];
   const idx = existing.findIndex(
-    (f: fabric.BaseFilter) => f.constructor === filter.constructor,
+    (f: fabric.filters.BaseFilter<string, Record<string, any>>) => f.constructor === filter.constructor,
   );
   if (idx >= 0) {
     existing[idx] = filter;
@@ -256,7 +256,7 @@ function rgbToHex(r: number, g: number, b: number): string {
   );
 }
 
-function buildFilter(settings: FilterSettings): fabric.BaseFilter | null {
+function buildFilter(settings: FilterSettings): fabric.filters.BaseFilter<string, Record<string, any>> | null {
   const v = settings.values;
 
   switch (settings.type) {

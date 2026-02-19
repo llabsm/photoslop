@@ -118,7 +118,7 @@ export default function EditorCanvas() {
     const bgRect = fabricCanvas
       .getObjects()
       .find(
-        (o) =>
+        (o: fabric.FabricObject) =>
           (o as fabric.Rect & { _isDocBackground?: boolean })
             ._isDocBackground === true,
       ) as fabric.Rect | undefined;
@@ -177,24 +177,26 @@ export default function EditorCanvas() {
 
     const canPan = () => activeTool === 'hand' || spaceDownRef.current;
 
-    const onMouseDown = (opt: fabric.TEvent<MouseEvent>) => {
+    const onMouseDown = (opt: fabric.TEvent) => {
       if (!canPan()) return;
       isPanningRef.current = true;
-      lastPanPointRef.current = { x: opt.e.clientX, y: opt.e.clientY };
+      const e = opt.e as MouseEvent;
+      lastPanPointRef.current = { x: e.clientX, y: e.clientY };
       fabricCanvas.selection = false;
     };
 
-    const onMouseMove = (opt: fabric.TEvent<MouseEvent>) => {
+    const onMouseMove = (opt: fabric.TEvent) => {
       if (!isPanningRef.current || !lastPanPointRef.current) return;
       const vpt = fabricCanvas.viewportTransform;
       if (!vpt) return;
 
-      const dx = opt.e.clientX - lastPanPointRef.current.x;
-      const dy = opt.e.clientY - lastPanPointRef.current.y;
+      const e = opt.e as MouseEvent;
+      const dx = e.clientX - lastPanPointRef.current.x;
+      const dy = e.clientY - lastPanPointRef.current.y;
       vpt[4] += dx;
       vpt[5] += dy;
       fabricCanvas.setViewportTransform(vpt);
-      lastPanPointRef.current = { x: opt.e.clientX, y: opt.e.clientY };
+      lastPanPointRef.current = { x: e.clientX, y: e.clientY };
       fabricCanvas.requestRenderAll();
     };
 

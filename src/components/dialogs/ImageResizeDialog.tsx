@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import * as fabric from 'fabric';
 import { useEditorStore } from '../../stores/editorStore';
 
 interface Props {
@@ -32,7 +33,7 @@ export default function ImageResizeDialog({ open, onClose, mode }: Props) {
       if (mode === 'image') {
         const scaleX = width / document.width;
         const scaleY = height / document.height;
-        fabricCanvas.getObjects().forEach((obj) => {
+        fabricCanvas.getObjects().forEach((obj: fabric.FabricObject) => {
           obj.scaleX = (obj.scaleX || 1) * scaleX;
           obj.scaleY = (obj.scaleY || 1) * scaleY;
           obj.left = (obj.left || 0) * scaleX;

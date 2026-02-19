@@ -43,7 +43,7 @@ export default function CanvasToolHandler() {
       case 'move':
         fabricCanvas.selection = true;
         fabricCanvas.defaultCursor = 'default';
-        fabricCanvas.forEachObject((o) => {
+        fabricCanvas.forEachObject((o: fabric.FabricObject) => {
           if (!(o as fabric.FabricObject & { _isDocBackground?: boolean })._isDocBackground) {
             o.selectable = true;
             o.evented = true;
@@ -88,7 +88,7 @@ export default function CanvasToolHandler() {
   // ── Mouse event handlers ───────────────────────────────────────────
 
   const getScenePoint = useCallback(
-    (e: fabric.TEvent<MouseEvent>) => {
+    (e: fabric.TEvent) => {
       if (!fabricCanvas) return { x: 0, y: 0 };
       return fabricCanvas.getScenePoint(e.e);
     },
@@ -97,7 +97,7 @@ export default function CanvasToolHandler() {
 
   // -- mouse:down ---
   const handleMouseDown = useCallback(
-    (opt: fabric.TEvent<MouseEvent>) => {
+    (opt: fabric.TEvent) => {
       if (!fabricCanvas) return;
       const pointer = getScenePoint(opt);
 
@@ -166,7 +166,7 @@ export default function CanvasToolHandler() {
 
   // -- mouse:move ---
   const handleMouseMove = useCallback(
-    (opt: fabric.TEvent<MouseEvent>) => {
+    (opt: fabric.TEvent) => {
       if (!fabricCanvas || !isDrawingRef.current) return;
       const pointer = getScenePoint(opt);
       const origin = originRef.current;
@@ -230,7 +230,7 @@ export default function CanvasToolHandler() {
 
   // -- mouse:up ---
   const handleMouseUp = useCallback(
-    (opt: fabric.TEvent<MouseEvent>) => {
+    (opt: fabric.TEvent) => {
       if (!fabricCanvas || !isDrawingRef.current) return;
       isDrawingRef.current = false;
       const pointer = getScenePoint(opt);

@@ -105,7 +105,7 @@ export default function App() {
   const handleFlip = useCallback((direction: string) => {
     if (!fabricCanvas) return;
     const objects = fabricCanvas.getObjects();
-    objects.forEach(obj => {
+    objects.forEach((obj: fabric.FabricObject) => {
       if (direction === 'horizontal') {
         obj.flipX = !obj.flipX;
       } else {
@@ -120,7 +120,7 @@ export default function App() {
   const handleRotate = useCallback((degrees: number) => {
     if (!fabricCanvas) return;
     const objects = fabricCanvas.getObjects();
-    objects.forEach(obj => {
+    objects.forEach((obj: fabric.FabricObject) => {
       obj.rotate((obj.angle || 0) + degrees);
       obj.setCoords();
     });
@@ -130,7 +130,7 @@ export default function App() {
   // Select all
   const handleSelectAll = useCallback(() => {
     if (!fabricCanvas) return;
-    const objs = fabricCanvas.getObjects().filter(o => !(o as any)._isDocBackground);
+    const objs = fabricCanvas.getObjects().filter((o: fabric.FabricObject) => !(o as any)._isDocBackground);
     if (objs.length > 0) {
       const sel = new fabric.ActiveSelection(objs, { canvas: fabricCanvas });
       fabricCanvas.setActiveObject(sel);
