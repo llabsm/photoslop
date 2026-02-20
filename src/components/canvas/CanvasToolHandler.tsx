@@ -31,10 +31,17 @@ export default function CanvasToolHandler() {
   // ── Configure Fabric selection / drawing mode when tool changes ─────
   useEffect(() => {
     if (!fabricCanvas) return;
-    // Reset drawing mode
+    // Reset drawing mode and cursors
     fabricCanvas.isDrawingMode = false;
     fabricCanvas.selection = false;
     fabricCanvas.defaultCursor = 'default';
+    fabricCanvas.hoverCursor = 'move';
+    fabricCanvas.freeDrawingCursor = 'crosshair';
+
+    // Discard active object selection when switching tools (except move)
+    if (activeTool !== 'move') {
+      fabricCanvas.discardActiveObject();
+    }
 
     // Remove any existing crop overlay
     removeCropOverlay(fabricCanvas);
@@ -52,10 +59,14 @@ export default function CanvasToolHandler() {
         break;
 
       case 'brush':
+        disableObjectInteraction(fabricCanvas);
+        fabricCanvas.defaultCursor = 'crosshair';
         configureBrush(fabricCanvas, foregroundColor, brushSettings, 'source-over');
         break;
 
       case 'eraser':
+        disableObjectInteraction(fabricCanvas);
+        fabricCanvas.defaultCursor = 'crosshair';
         configureBrush(fabricCanvas, '#ffffff', brushSettings, 'destination-out');
         break;
 
@@ -65,11 +76,37 @@ export default function CanvasToolHandler() {
         disableObjectInteraction(fabricCanvas);
         break;
 
+      case 'eyedropper':
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
+        fabricCanvas.selection = false;
+        // Keep objects evented=false so clicks go to our handler
+        disableObjectInteraction(fabricCanvas);
+        break;
+
+      case 'paint-bucket':
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
+        fabricCanvas.selection = false;
+        // For paint bucket, we want objects to be evented so we can detect clicks on them
+        fabricCanvas.forEachObject((o: fabric.FabricObject) => {
+          if (!(o as fabric.FabricObject & { _isDocBackground?: boolean })._isDocBackground) {
+            o.selectable = false;
+            o.evented = true;
+            o.hoverCursor = 'crosshair';
+          }
+        });
+        break;
+
       default:
+        // Shape tools, selection tools, crop, etc.
+        fabricCanvas.defaultCursor = 'crosshair';
+        fabricCanvas.hoverCursor = 'crosshair';
         fabricCanvas.selection = false;
         disableObjectInteraction(fabricCanvas);
         break;
     }
+    fabricCanvas.requestRenderAll();
   }, [activeTool, fabricCanvas, foregroundColor, brushSettings]);
 
   // ── Update brush settings live ─────────────────────────────────────
@@ -83,6 +120,9 @@ export default function CanvasToolHandler() {
           ? `rgba(255,255,255,${brushSettings.opacity})`
           : hexToRgba(foregroundColor, brushSettings.opacity);
     }
+    // Ensure drawing mode stays on
+    fabricCanvas.isDrawingMode = true;
+    fabricCanvas.freeDrawingCursor = 'crosshair';
   }, [fabricCanvas, activeTool, brushSettings, foregroundColor]);
 
   // ── Mouse event handlers ───────────────────────────────────────────
@@ -90,7 +130,8 @@ export default function CanvasToolHandler() {
   const getScenePoint = useCallback(
     (e: fabric.TEvent) => {
       if (!fabricCanvas) return { x: 0, y: 0 };
-      return fabricCanvas.getScenePoint(e.e);
+      const point = fabricCanvas.getScenePoint(e.e as MouseEvent);
+      return { x: point.x, y: point.y };
     },
     [fabricCanvas],
   );
@@ -99,6 +140,14 @@ export default function CanvasToolHandler() {
   const handleMouseDown = useCallback(
     (opt: fabric.TEvent) => {
       if (!fabricCanvas) return;
+
+      // Skip custom handling for tools that use Fabric's built-in drawing mode
+      if (activeTool === 'brush' || activeTool === 'eraser') return;
+      // Skip for move tool - let Fabric handle object selection
+      if (activeTool === 'move') return;
+      // Skip for hand tool - handled by EditorCanvas panning
+      if (activeTool === 'hand') return;
+
       const pointer = getScenePoint(opt);
 
       switch (activeTool) {
@@ -140,7 +189,7 @@ export default function CanvasToolHandler() {
           break;
 
         case 'paint-bucket':
-          handlePaintBucket(fabricCanvas, foregroundColor);
+          handlePaintBucket(fabricCanvas, foregroundColor, pointer);
           saveSnapshot('Paint bucket');
           break;
 
@@ -150,7 +199,7 @@ export default function CanvasToolHandler() {
           break;
 
         case 'zoom': {
-          const dir = opt.e.altKey ? 1 / 1.25 : 1.25;
+          const dir = (opt.e as MouseEvent).altKey ? 1 / 1.25 : 1.25;
           const newZoom = Math.min(32, Math.max(0.05, doc.zoom * dir));
           setDocument({ zoom: newZoom });
           break;
@@ -167,7 +216,10 @@ export default function CanvasToolHandler() {
   // -- mouse:move ---
   const handleMouseMove = useCallback(
     (opt: fabric.TEvent) => {
-      if (!fabricCanvas || !isDrawingRef.current) return;
+      if (!fabricCanvas) return;
+      // Skip for tools using Fabric's drawing mode
+      if (activeTool === 'brush' || activeTool === 'eraser') return;
+      if (!isDrawingRef.current) return;
       const pointer = getScenePoint(opt);
       const origin = originRef.current;
 
@@ -231,7 +283,10 @@ export default function CanvasToolHandler() {
   // -- mouse:up ---
   const handleMouseUp = useCallback(
     (opt: fabric.TEvent) => {
-      if (!fabricCanvas || !isDrawingRef.current) return;
+      if (!fabricCanvas) return;
+      // Skip for tools using Fabric's drawing mode
+      if (activeTool === 'brush' || activeTool === 'eraser') return;
+      if (!isDrawingRef.current) return;
       isDrawingRef.current = false;
       const pointer = getScenePoint(opt);
 
@@ -304,7 +359,18 @@ export default function CanvasToolHandler() {
     fabricCanvas.on('mouse:up', handleMouseUp);
 
     // Path created (brush / eraser)
-    const onPathCreated = () => {
+    const onPathCreated = (e: { path?: fabric.FabricObject }) => {
+      if (e.path) {
+        // Apply the composite operation stored on the brush
+        const brush = fabricCanvas.freeDrawingBrush;
+        const compositeOp = (brush as any)?._compositeOp || 'source-over';
+        if (compositeOp !== 'source-over') {
+          e.path.set('globalCompositeOperation' as any, compositeOp);
+        }
+        // Make drawn paths non-interactive (like in Photoshop - drawn strokes merge into the layer)
+        e.path.set({ selectable: false, evented: false });
+        fabricCanvas.requestRenderAll();
+      }
       saveSnapshot(activeTool === 'eraser' ? 'Erase' : 'Brush stroke');
     };
     fabricCanvas.on('path:created', onPathCreated);
@@ -361,13 +427,14 @@ function configureBrush(
   compositeOp: string,
 ) {
   canvas.isDrawingMode = true;
+  canvas.freeDrawingCursor = 'crosshair';
   const brush = new fabric.PencilBrush(canvas);
   brush.width = settings.size;
   brush.color = hexToRgba(color, settings.opacity);
-  (brush as fabric.PencilBrush & { globalCompositeOperation?: string }).globalCompositeOperation =
-    compositeOp;
   brush.strokeLineCap = 'round';
   brush.strokeLineJoin = 'round';
+  // Store composite operation for use in path:created handler
+  (brush as any)._compositeOp = compositeOp;
   canvas.freeDrawingBrush = brush;
 }
 
@@ -519,13 +586,32 @@ function sampleColor(
   canvas: fabric.Canvas,
   pointer: { x: number; y: number },
 ) {
+  // Render the canvas to ensure we sample the latest state
+  canvas.renderAll();
+
+  // Get the lower canvas context (contains all rendered objects)
   const ctx = canvas.getContext();
-  // Fabric v6: the context pixel corresponds to the viewport pixel
+  if (!ctx) return;
+
+  // Convert scene coordinates to screen pixel coordinates using viewport transform
   const vpt = canvas.viewportTransform;
   if (!vpt) return;
   const screenX = pointer.x * vpt[0] + vpt[4];
   const screenY = pointer.y * vpt[3] + vpt[5];
-  const pixel = ctx.getImageData(Math.round(screenX), Math.round(screenY), 1, 1).data;
+
+  // Account for retina/HiDPI scaling
+  const ratio = canvas.getRetinaScaling?.() || 1;
+  const px = Math.round(screenX * ratio);
+  const py = Math.round(screenY * ratio);
+
+  // Bounds check
+  const canvasEl = canvas.getElement();
+  if (px < 0 || py < 0 || px >= canvasEl.width || py >= canvasEl.height) return;
+
+  const pixel = ctx.getImageData(px, py, 1, 1).data;
+
+  // Convert RGB to hex, ignoring fully transparent pixels
+  if (pixel[3] === 0) return;
   const hex =
     '#' +
     ((1 << 24) + (pixel[0] << 16) + (pixel[1] << 8) + pixel[2])
@@ -534,21 +620,39 @@ function sampleColor(
   useEditorStore.getState().setForegroundColor(hex);
 }
 
-function handlePaintBucket(canvas: fabric.Canvas, color: string) {
+function handlePaintBucket(canvas: fabric.Canvas, color: string, pointer?: { x: number; y: number }) {
+  // First check if there's an actively selected object
   const active = canvas.getActiveObject();
-  if (active) {
+  if (active && !(active as fabric.FabricObject & { _isDocBackground?: boolean })._isDocBackground) {
     active.set('fill', color);
-  } else {
-    // Fill the background
-    const bgRect = canvas
-      .getObjects()
-      .find(
-        (o) =>
-          (o as fabric.Rect & { _isDocBackground?: boolean })._isDocBackground ===
-          true,
-      );
-    if (bgRect) bgRect.set('fill', color);
+    canvas.requestRenderAll();
+    return;
   }
+
+  // If we have a pointer, try to find the object under it
+  if (pointer) {
+    const objects = canvas.getObjects();
+    // Search from top to bottom (reverse order)
+    for (let i = objects.length - 1; i >= 0; i--) {
+      const obj = objects[i];
+      if ((obj as fabric.FabricObject & { _isDocBackground?: boolean })._isDocBackground) continue;
+      if (obj.containsPoint(new fabric.Point(pointer.x, pointer.y))) {
+        obj.set('fill', color);
+        canvas.requestRenderAll();
+        return;
+      }
+    }
+  }
+
+  // Fill the background
+  const bgRect = canvas
+    .getObjects()
+    .find(
+      (o) =>
+        (o as fabric.Rect & { _isDocBackground?: boolean })._isDocBackground ===
+        true,
+    );
+  if (bgRect) bgRect.set('fill', color);
   canvas.requestRenderAll();
 }
 

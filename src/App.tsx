@@ -55,13 +55,6 @@ export default function App() {
             selectable: true,
           });
 
-          // Resize document to fit image
-          setDocument({
-            width: imgEl.width,
-            height: imgEl.height,
-            name: file.name.replace(/\.[^.]+$/, ''),
-          });
-
           fabricCanvas.clear();
           // Re-add background
           const bg = new fabric.Rect({
@@ -76,6 +69,14 @@ export default function App() {
           (bg as any)._isDocBackground = true;
           fabricCanvas.add(bg);
           fabricCanvas.add(fabricImg);
+
+          // Resize document to fit image
+          setDocument({
+            width: imgEl.width,
+            height: imgEl.height,
+            name: file.name.replace(/\.[^.]+$/, ''),
+          });
+
           fabricCanvas.renderAll();
 
           // Reset layers
@@ -83,6 +84,11 @@ export default function App() {
           store.layers.forEach(l => store.removeLayer(l.id));
           addLayer({ name: 'Background', type: 'raster' });
           addLayer({ name: file.name, type: 'raster' });
+
+          // Auto fit to screen after import
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('photoslop:fitToScreen'));
+          }, 100);
         };
         imgEl.src = dataUrl;
       };
@@ -184,11 +190,6 @@ export default function App() {
     }
   }, [fabricCanvas]);
 
-  // Fit to screen
-  const handleFitToScreen = useCallback(() => {
-    setDocument({ zoom: 1 });
-  }, [setDocument]);
-
   // About
   const handleAbout = useCallback(() => {
     alert('Photoslop v1.0\nA browser-based image editor.\nBuilt with React, Fabric.js, and determination.');
@@ -220,7 +221,7 @@ export default function App() {
       'photoslop:rotate': (e) => handleRotate((e as CustomEvent).detail?.degrees || 90),
       'photoslop:mergeDown': () => handleMergeDown(),
       'photoslop:filter': (e) => setFilterType((e as CustomEvent).detail?.type || null),
-      'photoslop:fitToScreen': () => handleFitToScreen(),
+      // fitToScreen is handled directly by EditorCanvas
       'photoslop:about': () => handleAbout(),
       'photoslop:newAdjustmentLayer': (e) => {
         const type = (e as CustomEvent).detail?.type;
@@ -239,7 +240,7 @@ export default function App() {
         window.removeEventListener(event, handler);
       });
     };
-  }, [handleOpen, handleSave, handleCut, handleCopy, handlePaste, handleSelectAll, handleFlip, handleRotate, handleMergeDown, handleFitToScreen, handleAbout, addLayer]);
+  }, [handleOpen, handleSave, handleCut, handleCopy, handlePaste, handleSelectAll, handleFlip, handleRotate, handleMergeDown, handleAbout, addLayer]);
 
   return (
     <div className="app-layout">

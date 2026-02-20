@@ -16,36 +16,8 @@ export function useKeyboardShortcuts() {
       const shift = e.shiftKey;
       const key = e.key.toLowerCase();
 
-      // Tool shortcuts
+      // Non-ctrl shortcuts (tool shortcuts handled by Toolbar component)
       if (!ctrl && !e.altKey) {
-        const toolMap: Record<string, () => void> = {
-          v: () => store.setActiveTool('move'),
-          m: () => store.setActiveTool(shift ? 'marquee-ellipse' : 'marquee-rect'),
-          l: () => store.setActiveTool(shift ? 'lasso-poly' : 'lasso'),
-          w: () => store.setActiveTool('magic-wand'),
-          c: () => store.setActiveTool('crop'),
-          i: () => store.setActiveTool('eyedropper'),
-          j: () => store.setActiveTool('healing'),
-          s: () => store.setActiveTool('clone-stamp'),
-          b: () => store.setActiveTool('brush'),
-          e: () => store.setActiveTool('eraser'),
-          g: () => store.setActiveTool(shift ? 'paint-bucket' : 'gradient'),
-          o: () => store.setActiveTool(shift ? 'burn' : 'dodge'),
-          p: () => store.setActiveTool('pen'),
-          t: () => store.setActiveTool('text'),
-          u: () => store.setActiveTool('shape-rect'),
-          h: () => store.setActiveTool('hand'),
-          z: () => store.setActiveTool('zoom'),
-          x: () => store.swapColors(),
-          d: () => { if (!ctrl) store.resetColors(); },
-        };
-
-        if (toolMap[key]) {
-          e.preventDefault();
-          toolMap[key]();
-          return;
-        }
-
         // Brush size shortcuts
         if (key === '[') {
           e.preventDefault();
@@ -64,8 +36,21 @@ export function useKeyboardShortcuts() {
         switch (key) {
           case 'z':
             e.preventDefault();
-            if (shift) store.redo();
-            else store.undo();
+            if (shift) {
+              store.redo();
+            } else {
+              store.undo();
+            }
+            // Restore canvas state from the history snapshot (use queueMicrotask to ensure store updated)
+            queueMicrotask(() => {
+              const state = useEditorStore.getState();
+              const entry = state.history[state.historyIndex];
+              if (entry?.snapshot && state.fabricCanvas) {
+                state.fabricCanvas.loadFromJSON(JSON.parse(entry.snapshot)).then(() => {
+                  state.fabricCanvas?.requestRenderAll();
+                });
+              }
+            });
             break;
           case 'n':
             e.preventDefault();
@@ -102,15 +87,17 @@ export function useKeyboardShortcuts() {
             break;
           case '0':
             e.preventDefault();
-            store.setDocument({ zoom: 1 });
+            window.dispatchEvent(new CustomEvent('photoslop:fitToScreen'));
             break;
         }
       }
 
-      // Delete
+      // Delete selected object
       if (key === 'delete' || key === 'backspace') {
         if (!ctrl && store.fabricCanvas) {
           const active = store.fabricCanvas.getActiveObject();
+          // Don't delete if currently editing text
+          if (active && 'isEditing' in active && (active as any).isEditing) return;
           if (active && !(active as any)._isDocBackground) {
             store.fabricCanvas.remove(active);
             store.fabricCanvas.renderAll();
@@ -118,17 +105,11 @@ export function useKeyboardShortcuts() {
         }
       }
 
-      // Space for hand tool
-      if (key === ' ' && !ctrl) {
-        e.preventDefault();
-        store.setActiveTool('hand');
-      }
     };
 
-    const keyUpHandler = (e: KeyboardEvent) => {
-      if (e.key === ' ') {
-        store.setActiveTool(store.previousTool);
-      }
+    // Space-to-pan is handled by EditorCanvas
+    const keyUpHandler = (_e: KeyboardEvent) => {
+      // Placeholder for future key-up handling
     };
 
     window.addEventListener('keydown', handler);

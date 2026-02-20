@@ -6,7 +6,9 @@ export default function StatusBar() {
 
   const zoomIn = () => setDocument({ zoom: Math.min(32, document.zoom * 1.25) });
   const zoomOut = () => setDocument({ zoom: Math.max(0.05, document.zoom / 1.25) });
-  const zoomFit = () => setDocument({ zoom: 1 });
+  const zoomFit = () => {
+    window.dispatchEvent(new CustomEvent('photoslop:fitToScreen'));
+  };
 
   return (
     <div className="statusbar">

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { useEditorStore } from '../../stores/editorStore';
 import type { Tool } from '../../types';
 
@@ -361,6 +361,8 @@ const Toolbar: React.FC = () => {
   const resetColors = useEditorStore((s) => s.resetColors);
   const setForegroundColor = useEditorStore((s) => s.setForegroundColor);
   const setBackgroundColor = useEditorStore((s) => s.setBackgroundColor);
+  const fgPickerRef = useRef<HTMLInputElement>(null);
+  const bgPickerRef = useRef<HTMLInputElement>(null);
 
   /* Keyboard shortcuts */
   const handleKeyDown = useCallback(
@@ -455,34 +457,35 @@ const Toolbar: React.FC = () => {
       {/* ---- Color swatches at bottom ---- */}
       <div style={{ flex: 1 }} />
       <div className="color-swatches">
+        {/* Hidden color inputs - must have non-zero size for browser compatibility */}
+        <input
+          ref={fgPickerRef}
+          type="color"
+          value={foregroundColor}
+          onChange={(e) => setForegroundColor(e.target.value)}
+          style={{ position: 'absolute', top: 2, left: 2, width: 20, height: 20, opacity: 0, cursor: 'pointer' }}
+          tabIndex={-1}
+        />
+        <input
+          ref={bgPickerRef}
+          type="color"
+          value={backgroundColor}
+          onChange={(e) => setBackgroundColor(e.target.value)}
+          style={{ position: 'absolute', bottom: 2, right: 2, width: 20, height: 20, opacity: 0, cursor: 'pointer' }}
+          tabIndex={-1}
+        />
         {/* Foreground */}
         <div
           className="color-swatch-fg"
           style={{ backgroundColor: foregroundColor }}
-          onClick={() => {
-            const input = document.createElement('input');
-            input.type = 'color';
-            input.value = foregroundColor;
-            input.addEventListener('input', (ev) =>
-              setForegroundColor((ev.target as HTMLInputElement).value),
-            );
-            input.click();
-          }}
+          onClick={() => fgPickerRef.current?.click()}
           title="Foreground color"
         />
         {/* Background */}
         <div
           className="color-swatch-bg"
           style={{ backgroundColor: backgroundColor }}
-          onClick={() => {
-            const input = document.createElement('input');
-            input.type = 'color';
-            input.value = backgroundColor;
-            input.addEventListener('input', (ev) =>
-              setBackgroundColor((ev.target as HTMLInputElement).value),
-            );
-            input.click();
-          }}
+          onClick={() => bgPickerRef.current?.click()}
           title="Background color"
         />
         {/* Swap button */}

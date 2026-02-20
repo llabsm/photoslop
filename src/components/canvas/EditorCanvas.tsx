@@ -76,13 +76,9 @@ export default function EditorCanvas() {
     if (!fabricCanvas || !containerRef.current) return;
 
     const container = containerRef.current;
-    const parent = container.parentElement;
-    if (!parent) return;
-
-    const padX = showRulers ? RULER_SIZE : 0;
-    const padY = showRulers ? RULER_SIZE : 0;
-    const availW = parent.clientWidth - padX;
-    const availH = parent.clientHeight - padY;
+    const availW = container.clientWidth;
+    const availH = container.clientHeight;
+    if (availW <= 0 || availH <= 0) return;
 
     const zoom = doc.zoom;
     const displayW = doc.width * zoom;
@@ -99,7 +95,7 @@ export default function EditorCanvas() {
     const offsetY = (availH - displayH) / 2;
     fabricCanvas.setViewportTransform([zoom, 0, 0, zoom, offsetX, offsetY]);
     fabricCanvas.requestRenderAll();
-  }, [fabricCanvas, doc.width, doc.height, doc.zoom, showRulers]);
+  }, [fabricCanvas, doc.width, doc.height, doc.zoom]);
 
   useEffect(() => {
     updateCanvasSize();
@@ -111,6 +107,24 @@ export default function EditorCanvas() {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [updateCanvasSize]);
+
+  // ── Fit to screen handler (uses containerRef directly) ────────────
+  useEffect(() => {
+    const handleFitToScreen = () => {
+      if (!containerRef.current) return;
+      const container = containerRef.current;
+      const docState = useEditorStore.getState().document;
+      const availW = container.clientWidth - 40;
+      const availH = container.clientHeight - 40;
+      if (availW <= 0 || availH <= 0) return;
+      const scaleX = availW / docState.width;
+      const scaleY = availH / docState.height;
+      const fitZoom = Math.min(scaleX, scaleY);
+      setDocument({ zoom: Math.max(0.01, fitZoom) });
+    };
+    window.addEventListener('photoslop:fitToScreen', handleFitToScreen);
+    return () => window.removeEventListener('photoslop:fitToScreen', handleFitToScreen);
+  }, [setDocument]);
 
   // ── Update background rect when document dimensions change ─────────
   useEffect(() => {
@@ -322,12 +336,8 @@ export default function EditorCanvas() {
   // Keep ruler canvas sizes in sync
   useEffect(() => {
     if (!containerRef.current) return;
-    const parent = containerRef.current.parentElement;
-    if (!parent) return;
-    const padX = showRulers ? RULER_SIZE : 0;
-    const padY = showRulers ? RULER_SIZE : 0;
-    const w = parent.clientWidth - padX;
-    const h = parent.clientHeight - padY;
+    const w = containerRef.current.clientWidth;
+    const h = containerRef.current.clientHeight;
     if (rulerHRef.current) {
       rulerHRef.current.width = w;
       rulerHRef.current.height = RULER_SIZE;
@@ -412,12 +422,13 @@ export default function EditorCanvas() {
       {/* Fabric canvas wrapper */}
       <div
         ref={containerRef}
-        className="canvas-container"
+        className="editor-canvas-container"
         style={{
-          marginTop: showRulers ? RULER_SIZE : 0,
-          marginLeft: showRulers ? RULER_SIZE : 0,
-          width: '100%',
-          height: '100%',
+          position: 'absolute',
+          top: showRulers ? RULER_SIZE : 0,
+          left: showRulers ? RULER_SIZE : 0,
+          right: 0,
+          bottom: 0,
           overflow: 'hidden',
         }}
       >
